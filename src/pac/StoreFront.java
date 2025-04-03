@@ -4,56 +4,77 @@ import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class StoreFront {
+	
+	//helper obj. for using its member functions
+	static Helper helperObject=new Helper();
 
 	public static void main(String[] args) {
-		String host="jdbc:mysql://localhost:3306/";
-		String dbName="StoreFont";
-		String mySqlUrl=host+dbName;
-		String hostName="root";
-		String password="root";
+		
+		//we will retrieve only those values whose order status is shipped
 		String orderStat="Shipped";
+		
+		//scanner obj. for taking id from user
 		Scanner scannerObject=new Scanner(System.in);
 		
 		try {
 			System.out.println("Enter your id");
 			int userId=scannerObject.nextInt();
+			if(userId<=0)throw new Exception("Enter valid id");
+			
+			//loading the class
 			Class.forName("com.mysql.cj.jdbc.Driver");
-			Connection con=DriverManager.getConnection(mySqlUrl,hostName,password);
-			Statement stmt=con.createStatement();
-			String query="SELECT Orders.OrderId, OrderDate, OrderTotal "
-					+ "FROM Shopper "
-					+ "INNER JOIN Orders ON Shopper.ShopperId=Orders.ShopperId "
-					+ "INNER JOIN OrderItem ON Orders.OrderId=OrderItem.OrderId "
-					+ "AND Shopper.ShopperId= "
-					+  userId
-					+ " AND OrderStatus= '"+orderStat+"' "
-					
-					+ " ORDER BY OrderDate;";
+			//establishing con. with the mysql server
+			Connection con=DriverManager.getConnection(helperObject.mySqlUrl,
+					helperObject.hostName,helperObject.password);
+						
+			//getting queries from centralised class->queries
+			String query=Queries.fetchOrders(userId, orderStat);
+			
+			//statement ob. for executing queries
+			Statement stmt=con.prepareStatement(query);
+			
+			//resultset includes output of the query
 			ResultSet rs=stmt.executeQuery(query);
+			
 			int orderNumber=1;
-			while(rs.next()) {
-				int orderId=rs.getInt("orderId");
-				Date orderdate=rs.getDate("orderDate");
-				int orderTotal=rs.getInt("orderTotal");
-				System.out.println("Order "+orderNumber+
-						"-> Orderid= "+orderId+
-						"	OrderDate= "+orderdate+
-						"	OrderTotal= "+orderTotal);
-				System.out.println();
-				orderNumber++;
-			}			
+			//if there are rows in the output
+			if(rs.next()) {
+				while(rs.next()) {
+					int orderId=rs.getInt("orderId");
+					Date orderDate=rs.getDate("orderDate");
+					int orderTotal=rs.getInt("orderTotal");
+					System.out.println("Order "+orderNumber+
+							"-> Orderid= "+orderId+
+							"	OrderDate= "+orderDate+
+							"	OrderTotal= "+orderTotal);
+					System.out.println();
+					orderNumber++;
+					Orders orderObject=new Orders(orderId, orderDate, orderTotal);
+				    Orders.orderList.add(orderObject);
+				}
+			}
+			else {
+				System.out.println("There is no such order "
+						+ "in shipped state for provided user");
+			}
+						
+			//terminating all connections
 			rs.close();
 			stmt.close();
 			con.close();
 			
 		}
-		catch(Exception e) {
-			System.out.println(e);
+		catch(InputMismatchException e) {
+			System.out.println("Enter valid input");
 		}
-
+		catch(Exception e) {
+			if(e.getMessage()==null)
+			System.out.println(e);
+			else System.out.println(e.getMessage()); 				
+		}
 	}
-
 }

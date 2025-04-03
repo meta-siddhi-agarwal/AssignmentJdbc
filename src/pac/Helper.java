@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Scanner;
 
+//Helper class for storing frequently used variables
 public class Helper {
 	String host="jdbc:mysql://localhost:3306/";
 	String dbName="StoreFont";

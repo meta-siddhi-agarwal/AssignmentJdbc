@@ -2,6 +2,7 @@ package pac;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.InputMismatchException;
@@ -25,7 +26,7 @@ public class StoreFront {
 			int userId=scannerObject.nextInt();
 			if(userId<=0)throw new Exception("Enter valid id");
 			
-			//loading the class
+			//loading the driver
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			//establishing con. with the mysql server
 			Connection con=DriverManager.getConnection(helperObject.mySqlUrl,
@@ -36,27 +37,27 @@ public class StoreFront {
 			
 			//statement ob. for executing queries
 			Statement stmt=con.prepareStatement(query);
-			
+						
 			//resultset includes output of the query
 			ResultSet rs=stmt.executeQuery(query);
 			
-			int orderNumber=1;
 			//if there are rows in the output
-			if(rs.next()) {
-				while(rs.next()) {
-					int orderId=rs.getInt("orderId");
-					Date orderDate=rs.getDate("orderDate");
-					int orderTotal=rs.getInt("orderTotal");
-					System.out.println("Order "+orderNumber+
-							"-> Orderid= "+orderId+
-							"	OrderDate= "+orderDate+
-							"	OrderTotal= "+orderTotal);
-					System.out.println();
-					orderNumber++;
-					Orders orderObject=new Orders(orderId, orderDate, orderTotal);
-				    Orders.orderList.add(orderObject);
-				}
-			}
+			if (rs.next()) {
+			    int orderNum = 1;
+			    do {
+			        int orderId = rs.getInt("orderId");
+			        Date orderDate = rs.getDate("orderDate");
+			        int orderTotal = rs.getInt("orderTotal");
+			        System.out.println("Order " + orderNum +
+			                " -> OrderId= " + orderId +
+			                "    OrderDate= " + orderDate +
+			                "    OrderTotal= " + orderTotal);
+			        System.out.println();
+			        orderNum++;
+			        Orders orderObject = new Orders(orderId, orderDate, orderTotal);
+			        Orders.orderList.add(orderObject);
+			    } while (rs.next()); 
+			} 
 			else {
 				System.out.println("There is no such order "
 						+ "in shipped state for provided user");
